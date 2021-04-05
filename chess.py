@@ -103,9 +103,9 @@ class Board:
                     self._saved_moves = []
                     self.selected_piece = 0
                     self.moves.update_board(self.board)
-                    bol, mess = self.moves.checkmate(color)
-                    if bol:
-                        print(mess)
+#                     bol, mess = self.moves.checkmate(color)
+#                     if bol:
+#                         print(mess)
                     return True
 
         elif not select:
