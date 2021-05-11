@@ -1,6 +1,13 @@
-Chess Game has three main file. (PRESSME.py, Pieces.py, Board.py)
-The other two are base files, used for prototyping.
+Chess Game has two main file. (PRESSME.py, Pieces.py) with
+networking files of (chess_server.py and chess_client.py)
+The other two are base files, used for prototyping. Feel free
+to play around with (moves_ches.py and .py)
+
+
+To run server enter server and port in chess_server.py.
+(You don't need a server if you choose to play with offline.)
+
 
 To start game open and run PRESSME.py, which will import 
-Pieces.py and Board.py. The file will start window and will
-begin game. 
+Pieces.py and chess_client.py. The file will start window 
+and will begin game. 
