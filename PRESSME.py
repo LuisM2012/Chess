@@ -70,11 +70,11 @@ class Chess: #game set-up is here / managers turns, time, and window display
     def _reset(self):
         """Reset entire board"""
         self._reset_board()             #reset board
-        self.time2 = 6                #player 2 time
-        self.time1 = 6                #player 1 time
+        self.time2 = 40                #player 2 time
+        self.time1 = 41                #player 1 time
         self.timer = 0                  #for tracking time passed for each player
         self.clicked = None             #for tracking clicks
-        self.current = None             #to track current player     
+        self.current = 1             #to track current player     
         self.switch = False             #track if players switched
         self.in_menu = True             #to track screen to show
         self.online = False             #online or offline
@@ -82,33 +82,54 @@ class Chess: #game set-up is here / managers turns, time, and window display
         self.moves = []                 
 
 
-    def online_base(self):
+    def online_base(self):  #uncomment below to play online
         """Connect to server and reset players and screen for online match."""
-        # self.connection = Connection()
-        self.screen = 2#self.connection.listen()
-        if self.screen==2:
-            self.player1 = 2
-            self.player2 = 1
-        self._reset()
-        self.current = self.screen
+        # self.connection = Connection()            
+        self.screen = 1#self.connection.listen()
         self.online = True
 
     def manage_screens(self):
         """Invert board if screen is reversed"""                     
         self.t_pos = (30, 600)          #for setting position of time
         if self.screen == 2:            #to switch view
-            self.invert_e()                    
+            self.invert_e()  
+            self.t_pos = (600, 30)                  
 
+    #manage game
     def manage_win(self, time):
-        """Report win and loss."""
-        result = False
-        if time <= 0:
-            print("LOSER", self.timer, self.time1)
-            result = (self.current, self.player1 if self.player1!=self.current else self.player2)
-            print(result)
-        # if result:
-        #     self.
-        self.end = result
+        """Report win and loss from out of time or checkmate."""
+        if time <= 0: #out of time
+            self.end = 1 if self.current==2 else 2    
+            if self.online: self.connection.send('QUIT')     
+
+    def listen_for(self): #uncomment below to play online
+        # move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
+        # if move != 'QUIT':
+        #     old = (7-move[0][0], 7-move[0][1])  #piece position
+        #     new = (7-move[1][0], 7-move[1][1])  #new position
+        #     self.board[new[1]][new[0]] = self.board[old[1]][old[0]]
+        #     self.board[old[1]][old[0]] = 0
+        # else:
+        #     self.end = 2 if self.screen==2 else 1
+        pass
+
+    def send_to(self, piece: (int,int), new: (int,int) ): #uncomment below to play online
+        # self.connection.send(str((piece, new)))
+        pass
+
+    def check_mate(self, board): #still in production
+        """Check if current player is checkmated."""
+        king_moves = []
+        players_move =[]
+        for j in board:
+            for i in j:
+                if i!=0 and i.name=="K" and i.player==self.current:
+                    king_moves += i.get_moves(board, True if ) + i._position
+                if i!=0 and i.player!=self.current:
+                    players_move += i.get_moves(board, True)
+        print(f"other:{players_move}")
+        print(f"king:{king_moves}")
+        # return
 
     ### Change board
     def invert_e(self):
@@ -133,16 +154,16 @@ class Chess: #game set-up is here / managers turns, time, and window display
                 for p in i:
                         self._window.blit(p.image, self.position(p[0], p[1])) if p!=0 and p.image is not None else None
 
-            for b in self.moves:
-                draw.circle(self._window, "white", self.position(b[0], b[1], 40), 8) ##draw possible moves
+            for b in self.moves: ##draw possible moves
+                draw.circle(self._window, "white", self.position(b[0], b[1], 40), 8) 
 
             pygame.draw.rect(self._window, "white", (705, 30,90,70), 0, 13)
             pygame.draw.rect(self._window, "white", (705, 600,90,70), 0, 13)
 
-            time1 = self.time1-self.timer if self.current==1 else self.time1
-            time2 = self.time2-self.timer if self.current==2 else self.time2
-            self.manage_win(time1)
+            time1 = (self.time1-self.timer) if self.current==1 else self.time1
+            time2 = (self.time2-self.timer) if self.current==2 else self.time2
             if not self.online: self.manage_win(time2)
+            self.manage_win(time1) if self.screen==1 else self.manage_win(time2)
 
             mins = str(int(time2//60))
             secs = str(int(time2-(float(mins)*60)))
@@ -150,6 +171,8 @@ class Chess: #game set-up is here / managers turns, time, and window display
             color1 = "black" if time2>30 else "red"
             time_display = self.font.render((stringe), True, color1)
             self._window.blit(time_display, (710,self.t_pos[0]+25))
+            p2 = self.font.render(("PLAYER 2"), True, "white")
+            self._window.blit(p2, (702,self.t_pos[0]-20))
             
             mins = str(int(time1//60))
             secs = str(int(time1-(float(mins)*60)))
@@ -157,13 +180,15 @@ class Chess: #game set-up is here / managers turns, time, and window display
             color2 = "black" if time1>30 else "red"
             time_display = self.font.render((stringe), True, color2)
             self._window.blit(time_display, (710,self.t_pos[1]+25))
+            p1 = self.font.render(("PLAYER 1"), True, "white")
+            self._window.blit(p1, (702,self.t_pos[1]-20))
         else:
             self.menu_screen()
         
         pygame.display.update()
 
     def menu_screen(self):
-        """Draw out menu."""
+        """Display menu screen."""
         self._window.fill("gray")
         draw.rect(self._window, "blue", (305, 300,80,40), 0, 13)
         draw.rect(self._window, "green", (305, 375,80,40), 0, 13)
@@ -172,14 +197,22 @@ class Chess: #game set-up is here / managers turns, time, and window display
         self._window.blit(multi, (310, 310))
         self._window.blit(off, (310, 390))
     
-    def end_screen(self, results):
-        self._window.fill("orange")
-        draw.rect(self._window, "blue", (305, 300,80,40), 0, 13)
-        multi = self.font.render((" Menu"), True, "white")
-        self._window.blit(multi, (310, 310))
-        print(f"Loser: {results[0]}  Winner: {results[1]}")
+    def end_screen(self, results): #tip: for rect pygame uses (x1,y1,x2,y2) such as (0,0,width, height)
+        """Display end screen."""
+        self._window.fill("red")
+        self._window.fill("green", (0,0,WIDTH, HEIGHT//2) if results!=self.screen else (0,HEIGHT//2, WIDTH, HEIGHT))
+        draw.rect(self._window, "blue", (320,320, 160,60), 0, 13)
+        self.font = pygame.font.SysFont("Comic Sans", 60)
+        multi = self.font.render(("Next"), True, "white")
+        self._window.blit(multi, (355, 330))
 
+        side = (200, 500) if results!=self.screen else (500,200)
+        multi = self.font.render(("Winner"), True, "white")
+        self._window.blit(multi, (340, side[0]))
+        multi = self.font.render(("Loser"), True, "white")
+        self._window.blit(multi, (350, side[1]))
 
+        self.font = pygame.font.SysFont("Somic Sans MS", 30)
 
     ### Manage movement, clicks, pieces
     def position(self, x, y, plus=0): #conversion function board position to window position
@@ -187,31 +220,37 @@ class Chess: #game set-up is here / managers turns, time, and window display
         return ((x*80)+30+plus, (y*80)+30+plus)
 
     def onClick(self, pos): #monitors players moves
-        col = ((pos[0]-30)//80)
-        row = ((pos[1]-30)//80)
-        # print(col, row)
-        if col in (0,1,2,3,4,5,6,7) and row in (0,1,2,3,4,5,6,7) :
+        """Manage click on board (assuming there's no buttons and only the board)."""
+        # if self.online:                               #uncomment for online
+        #     if self.current != self.screen: return    #uncomment for online
+        col = ((pos[0]-30)//80)         #for easiness with x value
+        row = ((pos[1]-30)//80)         #for easiness with y value
+        
+        if col in (0,1,2,3,4,5,6,7) and row in (0,1,2,3,4,5,6,7): #check if its in board | select movement if True
             self.movement((col, row))
-        else:
-            print("out of board")
 
     def movement(self, pos):
-        if self.moves!=[] and pos in self.moves:
+        """Manage click on board spots."""
+        if self.moves!=[] and pos in self.moves:    #check if piece should be moved | if True move piece with self.move
             self.move(pos)
-        else:
-            print("here")
-            self.clicked = pos
-            self.moves = self.board[pos[1]][pos[0]].check_mate(self.board) if self.board[pos[1]][pos[0]]!=0 and self.board[pos[1]][pos[0]].player==self.current else []
-            self.moves = self.board[pos[1]][pos[0]].get_moves(self.board) if self.board[pos[1]][pos[0]]!=0 and self.board[pos[1]][pos[0]].player==self.current else []
+        else:                   #else get board spot clicked and get moves if not 0 and piece is current player's piece
+            self.clicked = pos  #get board spot clicked
+            print(self.board[pos[1]][pos[0]])
+            if self.current != self.screen:         #if different screen from current, must get moves from reciprocated board
+                self.moves = self.board[pos[1]][pos[0]].get_moves(self.board, True) if self.board[pos[1]][pos[0]]!=0 and self.board[pos[1]][pos[0]].player==self.current else []
+            else:                                   #else get from normal board
+                self.moves = self.board[pos[1]][pos[0]].get_moves(self.board) if self.board[pos[1]][pos[0]]!=0 and self.board[pos[1]][pos[0]].player==self.current else []
         print(self.moves)
         
     def move(self, new_pos):
-        pos = self.clicked
-        self.board[pos[1]][pos[0]].set_position(new_pos)
-        self.board[new_pos[1]][new_pos[0]] = self.board[pos[1]][pos[0]]
-        self.board[pos[1]][pos[0]] = 0
-        self.switch = True
-        self.moves = []
+        """Move piece to new position and set old position as 0."""
+        pos = self.clicked          #use for easiness when setting positions
+        self.board[pos[1]][pos[0]].set_position(new_pos)                    #set position to new position (for drawing)
+        self.board[new_pos[1]][new_pos[0]] = self.board[pos[1]][pos[0]]     #set piece to new board position (for self.board)
+        self.board[pos[1]][pos[0]] = 0                                      #set old position as 0
+        self.switch = True          #switch players
+        self.moves = []             #reset moves for next player
+        if self.online: self.send_to(pos, new_pos)          #used for online
 
     ### Main set-up / time and player monitor
     def main(self): 
@@ -221,7 +260,6 @@ class Chess: #game set-up is here / managers turns, time, and window display
         start = 0
         while run:
             clock.tick(10)
-
 
             if self.switch:
                 self.time1 = self.time1-self.timer if self.current==1 else self.time1 
@@ -242,20 +280,18 @@ class Chess: #game set-up is here / managers turns, time, and window display
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     if self.in_menu: 
-                        if 305<=pos[0]<=385 and 300<=pos[1]<=340: 
-                            print("on")
+                        if 305<=pos[0]<=385 and 300<=pos[1]<=340: #ONLINE button pressed
                             self.online_base()
                             self.in_menu = False
                             start = time.time()
                             self.manage_screens()
-                        if 305<=pos[0]<=385 and 375<=pos[1]<=415: 
+                        if 305<=pos[0]<=385 and 375<=pos[1]<=415: #OFFLINE button pressed
                             self.in_menu = False
-                            self.current = 1
                             self.screen = 1                 #to set up view
                             start = time.time()
                             self.manage_screens()
                     elif self.end:
-                        if 305<=pos[0]<=385 and 300<=pos[1]<=340:
+                        if 320<=pos[0]<=480 and 320<=pos[1]<=380: #NEXT button is pressed
                             self.end = False
                             self._reset()
                     else:
