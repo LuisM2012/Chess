@@ -67,7 +67,7 @@ to copy the board-image, by any means, I'm not in charge nor its under my name f
 that image in its entirety. The pieces-images (ROOK, QUEEN, KING, BISHOP, KNIGHT, PAWN)
 are mine. IF you intend to use these images for your own non-profit motives, by all means, you 
 have my jurisdiction to use them. AS FOR CODE, if you plan to use it for non-profit motives
-you also have my jurisdiction. HOWEVER, if you intend to use it for 'profit', please 
+you also have my jurisdiction. HOWEVER, if you intend to use any for 'profit', please 
 consult me before you do so.
 
 TL;DR - The board image is not mine, the other images are. If you plan to use the code or/and
