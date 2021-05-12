@@ -1,7 +1,7 @@
 from pieces import Pawn, Rook, King, Knight, Queen, Bishop
 from pygame import image, transform, draw
 from chess_client import Connection
-import pygame, os, math, time
+import pygame, os, time
 
 
 WIDTH = 800 #window width
@@ -68,18 +68,18 @@ class Chess: #game set-up is here / managers turns, time, and window display
         self.board[7][0] = Rook((0,7),   self.player1, image=blue_rook, name="R")
 
     def _reset(self):
-        """Reset entire board"""
+        """Reset entire board and and variables/settings"""
         self._reset_board()             #reset board
         self.time2 = 40                #player 2 time
         self.time1 = 41                #player 1 time
         self.timer = 0                  #for tracking time passed for each player
         self.clicked = None             #for tracking clicks
-        self.current = 1             #to track current player     
+        self.current = 1                #to track current player     
         self.switch = False             #track if players switched
         self.in_menu = True             #to track screen to show
         self.online = False             #online or offline
-        self.end = False
-        self.moves = []                 
+        self.end = False                #for end screen
+        self.moves = []                 #for moves in movement
 
 
     def online_base(self):  #uncomment below to play online
@@ -90,17 +90,17 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
     def manage_screens(self):
         """Invert board if screen is reversed"""                     
-        self.t_pos = (30, 600)          #for setting position of time
+        self.t_pos = (30, 600)          #for setting position of time and player
         if self.screen == 2:            #to switch view
-            self.invert_e()  
-            self.t_pos = (600, 30)                  
+            self.invert_e()             #invert board if player 2 is in front view
+            self.t_pos = (600, 30)      #for setting position of time and player
 
     #manage game
     def manage_win(self, time):
-        """Report win and loss from out of time or checkmate."""
+        """Report win and loss from out of time."""
         if time <= 0: #out of time
             self.end = 1 if self.current==2 else 2    
-            if self.online: self.connection.send('QUIT')     
+            # if self.online: self.connection.send('QUIT')    #uncomment for online     
 
     def listen_for(self): #uncomment below to play online
         # move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
@@ -110,32 +110,24 @@ class Chess: #game set-up is here / managers turns, time, and window display
         #     self.board[new[1]][new[0]] = self.board[old[1]][old[0]]
         #     self.board[old[1]][old[0]] = 0
         # else:
-        #     self.end = 2 if self.screen==2 else 1
+        #     self.end = 2 if self.screen==2 else 1     #other player left (other player: checkmated, out of time, lost connection)
         pass
 
-    def send_to(self, piece: (int,int), new: (int,int) ): #uncomment below to play online
-        # self.connection.send(str((piece, new)))
-        pass
-
-    def check_mate(self, board): #still in production
-        """Check if current player is checkmated."""
-        king_moves = []
-        players_move =[]
-        for j in board:
+    def check_king(self):
+        """Check if king was taken."""
+        for j in self.board:
             for i in j:
                 if i!=0 and i.name=="K" and i.player==self.current:
-                    king_moves += i.get_moves(board, True if ) + i._position
-                if i!=0 and i.player!=self.current:
-                    players_move += i.get_moves(board, True)
-        print(f"other:{players_move}")
-        print(f"king:{king_moves}")
-        # return
+                    print("king in board")
+                    return
+        self.end = 1 if self.current==2 else 2   
+        # if self.online: self.connection.send("QUIT")      #uncomment for online
 
     ### Change board
     def invert_e(self):
         """Invert both the board and the position of pieces. Works only with unison of pieces module."""
-        self.board = [row[::-1] for row in self.board[::-1]]
-        for row in self.board:
+        self.board = [row[::-1] for row in self.board[::-1]]        #invert board
+        for row in self.board:                                      #invert position for piece
             y = self.board.index(row)
             for piece in row:
                 x = row.index(piece)
@@ -199,20 +191,19 @@ class Chess: #game set-up is here / managers turns, time, and window display
     
     def end_screen(self, results): #tip: for rect pygame uses (x1,y1,x2,y2) such as (0,0,width, height)
         """Display end screen."""
-        self._window.fill("red")
-        self._window.fill("green", (0,0,WIDTH, HEIGHT//2) if results!=self.screen else (0,HEIGHT//2, WIDTH, HEIGHT))
         draw.rect(self._window, "blue", (320,320, 160,60), 0, 13)
         self.font = pygame.font.SysFont("Comic Sans", 60)
         multi = self.font.render(("Next"), True, "white")
         self._window.blit(multi, (355, 330))
 
-        side = (200, 500) if results!=self.screen else (500,200)
-        multi = self.font.render(("Winner"), True, "white")
-        self._window.blit(multi, (340, side[0]))
-        multi = self.font.render(("Loser"), True, "white")
-        self._window.blit(multi, (350, side[1]))
-
         self.font = pygame.font.SysFont("Somic Sans MS", 30)
+        
+        side = (120, 550) if results!=self.screen else (550,120)
+        multi = self.font.render(("Winner"), True, "green")
+        self._window.blit(multi, (715, side[0]))
+        multi = self.font.render(("Loser"), True, "red")
+        self._window.blit(multi, (720, side[1]))
+
 
     ### Manage movement, clicks, pieces
     def position(self, x, y, plus=0): #conversion function board position to window position
@@ -250,32 +241,34 @@ class Chess: #game set-up is here / managers turns, time, and window display
         self.board[pos[1]][pos[0]] = 0                                      #set old position as 0
         self.switch = True          #switch players
         self.moves = []             #reset moves for next player
-        if self.online: self.send_to(pos, new_pos)          #used for online
+        # if self.online: self.connection.send(str((pos, new_pos)))          #uncomment for online
 
     ### Main set-up / time and player monitor
     def main(self): 
         run = True
-        clock = pygame.time.Clock()
-
+        clock = pygame.time.Clock() #to set up fps
         start = 0
-        while run:
-            clock.tick(10)
 
-            if self.switch:
+        while run:
+            clock.tick(10)          #set up fps
+
+            if self.switch:     #reset timer that count players times and switch current player
                 self.time1 = self.time1-self.timer if self.current==1 else self.time1 
                 self.time2 = self.time2-self.timer if self.current==2 else self.time2 
                 self.current = 1 if self.current == 2 else 2
 
                 start = time.time()
                 self.switch = False
+                if not (self.online and self.current!=self.screen): self.check_king()   #check if current player is check-mated
 
             self.timer = (time.time() - start) if start != 0 else 0
-            self._draw()
+            self._draw()            #display screen
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
                     pygame.quit()
+                    # if self.online: self.connection.send('QUIT')      #uncomment for online
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
@@ -297,12 +290,10 @@ class Chess: #game set-up is here / managers turns, time, and window display
                     else:
                         self.onClick(pos)
 
-
 if __name__ == "__main__":
     ###initializes pygame window with Title, Font, and Display Size
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT))
     font = pygame.font.SysFont("Somic Sans MS", 30)
     pygame.display.set_caption('CHESS PYGAME')
-    ###initializes game
-    main_game = Chess(win, font)
+    main_game = Chess(win, font)            ###initializes game
