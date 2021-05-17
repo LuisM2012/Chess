@@ -1,6 +1,7 @@
 from socket import *
 from _thread import *
-# import pickle #coulds be used for sending board
+import time
+
 
 host = ""     #change to hosting server
 port   = 2020   #change to hosting port
@@ -16,17 +17,31 @@ games = {}
 
 
 def communication(client, address, player):
+    start = time.time()
     while True:
         if client in games.keys():
-            client.send(f'Player: {player}'.encode())
+            client.send(f'{player}'.encode())
             break
+        if (time.time()-start)>20:
+            if client in games.keys():
+                continue
+            connections.remove(client)
+            client.send("TIMEOUT".encode())
+            return
 
     while True:
         msg = client.recv(1024).decode()
-        if not msg or msg == "QUIT":
-            break
 
-        games[client].send(msg.encode())
+        if not msg or msg == "QUIT":
+            try:
+                games[client].send("QUIT".encode())
+            finally:
+                break
+
+        try:
+            games[client].send(msg.encode())
+        except:
+            break
 
     del games[client]
     connections.remove(client)
@@ -35,11 +50,11 @@ def communication(client, address, player):
     client.close()
 
 
-def match(client):
+def match(client, address):
     if len(connections)%2:
-        player = 2
-    else:
         player = 1
+    else:
+        player = 2
 
     connections.append(client)
     if player == 1:
@@ -48,23 +63,22 @@ def match(client):
                 if i not in games.keys() and i !=client:
                     games[client] = i
                     games[i] = client
-
         print("[NEW GAME] ...")
-    else:
-        connections.append(client)
-    
-    return player
+
+    communication(client, address, player)
 
 
 
-while True:
+try:
+    while True:
 
-    client, addr = server.accept()
-    print(f"[CONNECTED] {addr} has joined")
+        client, addr = server.accept()
+        print(f"[CONNECTED] {addr} has joined")
 
-    player = match(client)
-    
-    start_new_thread(communication, (client, addr, player))
-
-server.close()
-print("[STOPPED] Server ended...")
+        
+        start_new_thread(match, (client, addr))
+        
+except Exception as err:
+    print(f"{type(err)[8:-2]}:{err}")
+    server.close()
+    print("[STOPPED] Server ended...")  
