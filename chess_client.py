@@ -2,21 +2,30 @@ import socket
 import time
 
 
-"""
-class: Connection - used for connecting user to server and join online games
-"""
+class NoPlayerActive(Exception):
+    pass
+
+
+# """
+# class: Connection - used for connecting user to server and join online games
+# """
 class Connection:
     def __init__(self):
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server = "localhost" #change to hosting server
-        self.port = 2000        #change to hosting port
+        self.port = 2020        #change to hosting port
         self.addr = (self.server, self.port)
         self.connect()
 
     def connect(self):
         """Connect user to server."""
-        self.client.connect(self.addr)
+        try:
+            self.client.connect(self.addr)
+        except ConnectionRefusedError:
+            print("ConectionRefusedERROR: Connection not Available at this Time.")
+            raise
+
 
     def disconnect(self):
         """Disconnect user to server."""
@@ -42,6 +51,9 @@ class Connection:
 
     def listen(self):
         """Listen for server message."""
-        msg = self.client.recv()
+        msg = self.client.recv(1024).decode()
+        print(f"msg: {msg}")
+        if msg=="TIMEOUT":
+            print("NoPlayerActive: No players active at this time.")
+            raise NoPlayerActive("No players active at this time.")
         return msg
-
