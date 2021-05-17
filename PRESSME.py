@@ -31,12 +31,12 @@ Chess class uses Board class to implement movement
 class Chess: #game set-up is here / managers turns, time, and window display
     
     def __init__(self, window, font):
-        self._window = window
-        self.font = font
-        self.player1 = 1
-        self.player2 = 2
-        self._reset()
-        self.main()
+        self._window = window           #display in pygame window
+        self.font = font                #font in pygame window
+        self.player1 = 1    #always one
+        self.player2 = 2    #always two
+        self._reset()   #resets board and shows menu screen
+        self.main()     #runs game
 
     ###Manage initial board variables and pieces.
     def _reset_board(self):
@@ -70,8 +70,9 @@ class Chess: #game set-up is here / managers turns, time, and window display
     def _reset(self):
         """Reset entire board and and variables/settings"""
         self._reset_board()             #reset board
-        self.time2 = 40                #player 2 time
-        self.time1 = 41                #player 1 time
+        self.screen = 1
+        self.time2 = 140                #player 2 time
+        self.time1 = 141                #player 1 time
         self.timer = 0                  #for tracking time passed for each player
         self.clicked = None             #for tracking clicks
         self.current = 1                #to track current player     
@@ -84,8 +85,10 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
     def online_base(self):  #uncomment below to play online
         """Connect to server and reset players and screen for online match."""
-        # self.connection = Connection()            
-        self.screen = 1#self.connection.listen()
+        self.connection = Connection()       
+        x = int(self.connection.listen())
+        print(f"{x}; {x==1} vs {x==2}")
+        self.screen = 2 if x==2 else 1
         self.online = True
 
     def manage_screens(self):
@@ -100,18 +103,20 @@ class Chess: #game set-up is here / managers turns, time, and window display
         """Report win and loss from out of time."""
         if time <= 0: #out of time
             self.end = 1 if self.current==2 else 2    
-            # if self.online: self.connection.send('QUIT')    #uncomment for online     
+            if self.online: self.connection.send('QUIT')    #uncomment for online     
 
     def listen_for(self): #uncomment below to play online
-        # move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
-        # if move != 'QUIT':
-        #     old = (7-move[0][0], 7-move[0][1])  #piece position
-        #     new = (7-move[1][0], 7-move[1][1])  #new position
-        #     self.board[new[1]][new[0]] = self.board[old[1]][old[0]]
-        #     self.board[old[1]][old[0]] = 0
-        # else:
-        #     self.end = 2 if self.screen==2 else 1     #other player left (other player: checkmated, out of time, lost connection)
-        pass
+        move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
+        print(move)
+        if move != 'QUIT':
+            move = eval(move)
+            old = (7-move[0][0], 7-move[0][1])  #piece position
+            new = (7-move[1][0], 7-move[1][1])  #new position
+            self.switch_pos(old, new)
+        else:
+            self.connection.disconnect()
+            self.online = False
+            self.end = 2 if self.screen==2 else 1     #other player left (other player: checkmated, out of time, lost connection)
 
     def check_king(self):
         """Check if king was taken."""
@@ -121,7 +126,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
                     print("king in board")
                     return
         self.end = 1 if self.current==2 else 2   
-        # if self.online: self.connection.send("QUIT")      #uncomment for online
+        if self.online: self.connection.send("QUIT")      #uncomment for online
 
     ### Change board
     def invert_e(self):
@@ -212,8 +217,8 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
     def onClick(self, pos): #monitors players moves
         """Manage click on board (assuming there's no buttons and only the board)."""
-        # if self.online:                               #uncomment for online
-        #     if self.current != self.screen: return    #uncomment for online
+        if self.online:                               #uncomment for online
+            if self.current != self.screen: return    #uncomment for online
         col = ((pos[0]-30)//80)         #for easiness with x value
         row = ((pos[1]-30)//80)         #for easiness with y value
         
@@ -236,20 +241,23 @@ class Chess: #game set-up is here / managers turns, time, and window display
     def move(self, new_pos):
         """Move piece to new position and set old position as 0."""
         pos = self.clicked          #use for easiness when setting positions
+        self.switch_pos(pos, new_pos)
+        if self.online: self.connection.send(str((pos, new_pos)))          #uncomment for online
+
+    def switch_pos(self, pos, new_pos):
         self.board[pos[1]][pos[0]].set_position(new_pos)                    #set position to new position (for drawing)
         self.board[new_pos[1]][new_pos[0]] = self.board[pos[1]][pos[0]]     #set piece to new board position (for self.board)
         self.board[pos[1]][pos[0]] = 0                                      #set old position as 0
         self.switch = True          #switch players
         self.moves = []             #reset moves for next player
-        # if self.online: self.connection.send(str((pos, new_pos)))          #uncomment for online
+
 
     ### Main set-up / time and player monitor
     def main(self): 
-        run = True
         clock = pygame.time.Clock() #to set up fps
         start = 0
 
-        while run:
+        while True:
             clock.tick(10)          #set up fps
 
             if self.switch:     #reset timer that count players times and switch current player
@@ -263,24 +271,29 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
             self.timer = (time.time() - start) if start != 0 else 0
             self._draw()            #display screen
+            if self.online and self.current!=self.screen and not self.end: 
+                self.listen_for()
+                continue
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
                     pygame.quit()
-                    # if self.online: self.connection.send('QUIT')      #uncomment for online
+                    if self.online: self.connection.disconnect()      #uncomment for online
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     if self.in_menu: 
                         if 305<=pos[0]<=385 and 300<=pos[1]<=340: #ONLINE button pressed
-                            self.online_base()
+                            try:
+                                self.online_base()
+                            except:
+                                continue
                             self.in_menu = False
                             start = time.time()
                             self.manage_screens()
                         if 305<=pos[0]<=385 and 375<=pos[1]<=415: #OFFLINE button pressed
                             self.in_menu = False
-                            self.screen = 1                 #to set up view
                             start = time.time()
                             self.manage_screens()
                     elif self.end:
@@ -289,6 +302,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
                             self._reset()
                     else:
                         self.onClick(pos)
+
 
 if __name__ == "__main__":
     ###initializes pygame window with Title, Font, and Display Size
