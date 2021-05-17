@@ -1,24 +1,26 @@
-Chess Game has one main file. (PRESSME.py) with two 
+Chess Game has one main file (PRESSME.py) with two 
 networking modules of (chess_server.py and chess_client.py)
-and a game board set-up module (Pieces.py).
+and a game set-up module (pieces.py).
 
 The other files are base files used for prototyping and images 
 used for displaying pieces. Feel free to play around with 
 (moves_ches.py and chess.py) by running 
-chess.py which should import moves_ches.py. 
+(chess.py) which should import (moves_ches.py). 
 
 You can also run the main file, 
 but will not be able to connect online. You will 
-be playing on offline base.
+be playing on offline base. To connect online, you must
+use active server and connect it with the (chess_server.py)
+file by changing appropriate host address and port.
 
 MAIN FILE:
 
 To run server for playing online enter server 
-and port in chess_server.py. (You don't need a server 
+and port in (chess_client.py). (You don't need a server 
 if you choose to play with offline.)
 
 To start game open and run PRESSME.py, which will import 
-Pieces.py and chess_client.py. The file will start window 
+(pieces.py) and (chess_client.py). The file will start window 
 and will run game. 
 
 There are three main buttons. (NEXT, OFFLINE, and ONLINE)
