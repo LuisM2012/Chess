@@ -81,12 +81,13 @@ class Chess: #game set-up is here / managers turns, time, and window display
         self.online = False             #online or offline
         self.end = False                #for end screen
         self.moves = []                 #for moves in movement
+        self.listening = False
 
 
     def online_base(self):  #uncomment below to play online
         """Connect to server and reset players and screen for online match."""
-        self.connection = Connection()       
-        x = int(self.connection.listen())
+        self.connection = Connection()
+        x = int(self.connection.init_player())
         print(f"{x}; {x==1} vs {x==2}")
         self.screen = 2 if x==2 else 1
         self.online = True
@@ -103,20 +104,24 @@ class Chess: #game set-up is here / managers turns, time, and window display
         """Report win and loss from out of time."""
         if time <= 0: #out of time
             self.end = 1 if self.current==2 else 2    
-            if self.online: self.connection.send('QUIT')    #uncomment for online     
+            if self.online: self.connection.send('QUIT')    #will auto disconnect   
 
     def listen_for(self): #uncomment below to play online
-        move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
-        print(move)
-        if move != 'QUIT':
-            move = eval(move)
-            old = (7-move[0][0], 7-move[0][1])  #piece position
-            new = (7-move[1][0], 7-move[1][1])  #new position
-            self.switch_pos(old, new)
-        else:
-            self.connection.disconnect()
-            self.online = False
-            self.end = 2 if self.screen==2 else 1     #other player left (other player: checkmated, out of time, lost connection)
+        # move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
+        if len(self.connection.resp)>0:
+            move = self.connection.resp[0]
+            print(move)
+            if move != 'QUIT':
+                move = eval(move)
+                old = (7-move[0][0], 7-move[0][1])  #piece position
+                new = (7-move[1][0], 7-move[1][1])  #new position
+                self.switch_pos(old, new)
+                self.listening = False
+            else:
+                self.connection.disconnect()
+                self.end = 2 if self.screen==2 else 1     #other player left (other player: checkmated, out of time, lost connection)
+            return True
+        return False
 
     def check_king(self):
         """Check if king was taken."""
@@ -126,7 +131,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
                     print("king in board")
                     return
         self.end = 1 if self.current==2 else 2   
-        if self.online: self.connection.send("QUIT")      #uncomment for online
+        if self.online: self.connection.send("QUIT")      #will auto disconnect
 
     ### Change board
     def invert_e(self):
@@ -254,10 +259,11 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
     ### Main set-up / time and player monitor
     def main(self): 
+        run = True
         clock = pygame.time.Clock() #to set up fps
         start = 0
 
-        while True:
+        while run:
             clock.tick(10)          #set up fps
 
             if self.switch:     #reset timer that count players times and switch current player
@@ -271,9 +277,14 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
             self.timer = (time.time() - start) if start != 0 else 0
             self._draw()            #display screen
-            if self.online and self.current!=self.screen and not self.end: 
-                self.listen_for()
-                continue
+            if self.online and self.current!=self.screen and not self.end:
+                if not self.listening:
+                    print("self.listening")
+                    self.connection.listen()
+                    self.listening = True
+                else:
+                    x = self.listen_for()
+                    if x: continue
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -287,7 +298,8 @@ class Chess: #game set-up is here / managers turns, time, and window display
                         if 305<=pos[0]<=385 and 300<=pos[1]<=340: #ONLINE button pressed
                             try:
                                 self.online_base()
-                            except:
+                            except Exception as e:
+                                print(f"{type(e)}: {e}")
                                 continue
                             self.in_menu = False
                             start = time.time()
