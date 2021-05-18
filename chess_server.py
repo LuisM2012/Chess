@@ -1,5 +1,5 @@
 from socket import *
-from _thread import *
+from _thread import start_new_thread
 import time
 
 
@@ -25,29 +25,36 @@ def communication(client, address, player):
         if (time.time()-start)>20:
             if client in games.keys():
                 continue
-            connections.remove(client)
             client.send("TIMEOUT".encode())
+            cut_connect(client, address)
             return
+    try:
+        while True:
+            msg = client.recv(1024).decode()
 
-    while True:
-        msg = client.recv(1024).decode()
+            if not msg or msg == "QUIT":
+                try:
+                    games[client].send("QUIT".encode())
+                    break
+                except:
+                    break
 
-        if not msg or msg == "QUIT":
             try:
-                games[client].send("QUIT".encode())
-            finally:
+                games[client].send(msg.encode())
+            except:
                 break
+    except Exception as er:
+        print(f"{type(er)}: {er}")
 
-        try:
-            games[client].send(msg.encode())
-        except:
-            break
+    if client in games: del games[client]
+    cut_connect(client, address)
 
-    del games[client]
+def cut_connect(client, address):
+
     connections.remove(client)
-
     print(f"[DISCONNECTED] {address} has left")
     client.close()
+
 
 
 def match(client, address):
@@ -79,6 +86,6 @@ try:
         start_new_thread(match, (client, addr))
         
 except Exception as err:
-    print(f"{type(err)[8:-2]}:{err}")
+    print(f"{type(err)[8:-2]}: {err}")
     server.close()
-    print("[STOPPED] Server ended...")  
+    print("[STOPPED] Server ended...")
