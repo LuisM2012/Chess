@@ -7,6 +7,15 @@ used for displaying pieces. Feel free to play around with
 (moves_ches.py and chess.py) by running 
 (chess.py) which should import (moves_ches.py). 
 
+REQUIREMENTS:
+- Must have Python installed (version used 2.7.16)
+- Must have Pygame installed (version used 1.9.5)
+
+IMPORTS:
+- Threadding
+- 
+
+
 You can also run the main file, 
 but will not be able to connect online. You will 
 be playing on offline base. To connect online, you must
