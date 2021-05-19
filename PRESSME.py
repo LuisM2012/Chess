@@ -71,8 +71,8 @@ class Chess: #game set-up is here / managers turns, time, and window display
         """Reset entire board and and variables/settings"""
         self._reset_board()             #reset board
         self.screen = 1
-        self.time2 = 140                #player 2 time
-        self.time1 = 141                #player 1 time
+        self.time2 = 600                #player 2 time
+        self.time1 = 601                #player 1 time plus 1 second for setting up window and variables
         self.timer = 0                  #for tracking time passed for each player
         self.clicked = None             #for tracking clicks
         self.current = 1                #to track current player     
@@ -107,7 +107,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
             if self.online: self.connection.send('QUIT')    #will auto disconnect   
 
     def listen_for(self): #uncomment below to play online
-        # move = self.connection.listen() #WILL return QUIT or ((2,2),(1,1))
+        """Listen for response from other player."""
         if len(self.connection.resp)>0:
             move = self.connection.resp[0]
             print(move)
@@ -250,6 +250,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
         if self.online: self.connection.send(str((pos, new_pos)))          #uncomment for online
 
     def switch_pos(self, pos, new_pos):
+        """Move piece and set next player up."""
         self.board[pos[1]][pos[0]].set_position(new_pos)                    #set position to new position (for drawing)
         self.board[new_pos[1]][new_pos[0]] = self.board[pos[1]][pos[0]]     #set piece to new board position (for self.board)
         self.board[pos[1]][pos[0]] = 0                                      #set old position as 0
@@ -259,6 +260,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
 
     ### Main set-up / time and player monitor
     def main(self): 
+        """Run main loop."""
         run = True
         clock = pygame.time.Clock() #to set up fps
         start = 0
@@ -299,7 +301,7 @@ class Chess: #game set-up is here / managers turns, time, and window display
                             try:
                                 self.online_base()
                             except Exception as e:
-                                print(f"{type(e)}: {e}")
+                                print(e)
                                 continue
                             self.in_menu = False
                             start = time.time()
