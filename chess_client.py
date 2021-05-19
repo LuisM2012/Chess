@@ -39,21 +39,23 @@ class Connection:
             print(e)
 
     def listen(self):
-        """Listen for server message."""
-        print("listening")
+        """Listen for server message by using a thread."""
         Thread(target=self.sub_listen).start()
         
     def sub_listen(self):
+        """Listen from server with thread."""
         self.resp.clear()
         msg = self.client.recv(1024).decode()
         self.resp.insert(0, msg)
 
         print(f"msg: {msg}")
+
+    def init_player(self):
+        """Listen for response from server to start game."""
+        msg = self.client.recv(1024).decode()
+        print(msg)
+        
         if msg=="TIMEOUT":
             print("NoPlayerActive: No players active at this time.")
             raise NoPlayerActive("No players active at this time.")
-
-    def init_player(self):
-        msg = self.client.recv(1024).decode()
-        print(msg)
         return msg
