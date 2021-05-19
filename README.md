@@ -13,7 +13,9 @@ REQUIREMENTS:
 
 IMPORTS:
 - Threadding
-- 
+- pygame
+- os
+- time
 
 
 You can also run the main file, 
