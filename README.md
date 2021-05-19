@@ -12,23 +12,30 @@ REQUIREMENTS:
 - Must have Pygame installed (version used 1.9.5)
 
 IMPORTS:
-- Threadding
+- threadding
 - pygame
 - os
 - time
+- socket
+- _thread
+- pieces (module written for game)
+- chess_client (module for network)
 
 
-You can also run the main file, 
-but will not be able to connect online. You will 
-be playing on offline base. To connect online, you must
-use active server and connect it with the (chess_server.py)
-file by changing appropriate host address and port.
+You can run the main file, 
+but will not be able to connect online. 
+
+To run server, you must
+use active server and connect it with (chess_server.py)
+file by changing appropriate host address and port
+(left as comment where to change host and port numbers).
+
+To connect online enter server address
+and port in (chess_client.py). (You don't need a 
+server if you choose to play with offline.)
+
 
 MAIN FILE:
-
-To run server for playing online enter server 
-and port in (chess_client.py). (You don't need a server 
-if you choose to play with offline.)
 
 To start game open and run PRESSME.py, which will import 
 (pieces.py) and (chess_client.py). The file will start window 
@@ -39,14 +46,21 @@ There are three main buttons. (NEXT, OFFLINE, and ONLINE)
 ONLINE (will only appear in menu screen):
 
 Will connect you to server.
-Will send you to play with an online person if found.
+Will send you to play with an online person if 
+found (wait-time to retry is 20s).
 Will immediately start game once player is found.
 
 OFFLINE (will appear only in menu screen):
 
 Will send you to an offline game. 
 You can let someone else play for the second 
-player. or you can use offline for strategizing.
+player, or you can use offline for strategizing.
+
+
+MAIN SCREEN:
+
+ONLINE and OFFLINE will appear.
+
 
 For GAME:
 
@@ -67,10 +81,18 @@ haven't planned to enable such feature).
 
 AFTER GAME is WON/LOST:
 
-NEXT button will show up.
+NEXT button will appear.
 Once pressed you will be returned to menu screen.
 
+
+ADDITIONALS:
+
+
 0 bugs known:
+
+1 improvement need:
+- lessen time-lag between players online
+
 If you happen to find any bugs, please contact me at 
 luismorales062012@gmail.com
 
